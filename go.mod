@@ -1,4 +1,4 @@
-module github.com/brito-rafa/k8s-mutator
+module github.com/brito-rafa/k8s-mutators
 
 go 1.14
 
