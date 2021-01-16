@@ -64,7 +64,7 @@ func annotateUnsupported(pluginName string, src routev1API.Route) map[string]str
 // TO DO : Handle OCP InsecureEdgeTerminationPolicy Allow as permitInsecure
 func translateRoute(pluginName string, log logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service) (*contourv1.Route, error) {
 
-	log.Tracef("[%s] Details of the Service are: %v\n", pluginName, service)
+	log.Debugf("[%s] Details of the Service are: %v\n", pluginName, service)
 
 	if service.Name != ocpRoute.Spec.To.Name {
 		log.Errorf("[%s] The service name is %s and the OCP route reference Spec.To.Name is %s. They need to match.", pluginName, service.Name, ocpRoute.Spec.To.Name)
@@ -182,7 +182,7 @@ func createSecret(pluginName string, log logrus.FieldLogger, ocpRoute routev1API
 // TO DO : Handle OCP InsecureEdgeTerminationPolicy Allow as permitInsecure
 func Mutate(pluginName string, log logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service, domain string) (*contourv1.HTTPProxy, *core.Secret, error) {
 
-	log.Tracef("[%s] ocpRoute %#v", pluginName, ocpRoute)
+	log.Debugf("[%s] ocpRoute %#v", pluginName, ocpRoute)
 
 	if service.Namespace != ocpRoute.Namespace {
 		log.Errorf("[%s] The namespace of service is %s and the namespace of OCP Route is %s. They need to match.", pluginName, service.Namespace, ocpRoute.Namespace)
