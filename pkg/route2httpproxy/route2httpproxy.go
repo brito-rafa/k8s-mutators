@@ -25,13 +25,13 @@ var (
 )
 
 // if there's an error, print it out
-func checkError(pluginName string, log *logrus.FieldLogger, msgString string, err error) {
+func checkError(pluginName string, log logrus.FieldLogger, msgString string, err error) {
 	if err != nil {
 		log.Errorf("[%s] %s %v", pluginName, msgString, err.Error())
 	}
 }
 
-func unsupportedField(pluginName string, log *logrus.FieldLogger, msgString string) {
+func unsupportedField(pluginName string, log logrus.FieldLogger, msgString string) {
 	// maybe only print out if log level is debug or ...
 	log.Warnf("[%s] %s %s", pluginName, msgString, "unsupported")
 }
@@ -62,7 +62,7 @@ func annotateUnsupported(pluginName string, src routev1API.Route) map[string]str
 // TO DO : Make this function to return an array of httpproxy routes, including to parse Route.Spec.AlternateBackends
 // TO DO : Handle weight to be extracted from OCP Route into HTTPProxy Route
 // TO DO : Handle OCP InsecureEdgeTerminationPolicy Allow as permitInsecure
-func translateRoute(pluginName string, log *logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service) (*contourv1.Route, error) {
+func translateRoute(pluginName string, log logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service) (*contourv1.Route, error) {
 
 	log.Tracef("[%s] Details of the Service are: %v\n", pluginName, service)
 
@@ -146,7 +146,7 @@ func translateRoute(pluginName string, log *logrus.FieldLogger, ocpRoute routev1
 	return &httpproxyRoute, nil
 }
 
-func createSecret(pluginName string, log *logrus.FieldLogger, ocpRoute routev1API.Route) (*core.Secret, error) {
+func createSecret(pluginName string, log logrus.FieldLogger, ocpRoute routev1API.Route) (*core.Secret, error) {
 	hpSecretNamePrefix := "hpsecret-" //defining a secret-prefix
 	hpSecretName := ocpRoute.ObjectMeta.Name
 	hpSecretName = hpSecretNamePrefix + hpSecretName
@@ -180,7 +180,7 @@ func createSecret(pluginName string, log *logrus.FieldLogger, ocpRoute routev1AP
 // If OCP route has a certificate, returns it as a secret
 // TO DO: Support OCP Route.Spec.AlternateBackends
 // TO DO : Handle OCP InsecureEdgeTerminationPolicy Allow as permitInsecure
-func Mutate(pluginName string, log *logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service, domain string) (*contourv1.HTTPProxy, *core.Secret, error) {
+func Mutate(pluginName string, log logrus.FieldLogger, ocpRoute routev1API.Route, service core.Service, domain string) (*contourv1.HTTPProxy, *core.Secret, error) {
 
 	log.Tracef("[%s] ocpRoute %#v", pluginName, ocpRoute)
 
