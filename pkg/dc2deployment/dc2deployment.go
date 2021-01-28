@@ -18,21 +18,11 @@ const (
 	// deployments. If no triggers are defined, a new deployment can only occur as
 	// a result of an explicit client update to the DeploymentConfig with a new
 	// LatestVersion. If null, defaults to having a config change trigger.
-	dcTrigger = "DeploymentConfig.Spec.trigger"
+	dcTriggers = "DeploymentConfig.Spec.triggers"
 	// activeDeadlineSeconds is the duration in seconds that the deployer pods for
 	// this deployment config may be active on a node before the system actively
 	// tries to terminate them
 	dcActiveDeadlineSeconds = "DeploymentConfig.Spec.Strategy.activeDeadlineSeconds"
-	// intervalSeconds is the time to wait between polling deployment status after
-	//   update. If the value is nil, a default will be used.
-	dcIntervalSeconds = "DeploymentConfig.Spec.Strategy.rollingParams.intervalSeconds"
-	// TimeoutSeconds is the time to wait for updates before giving up. If the
-	// value is nil, a default will be used.
-	dcTimeoutSeconds = "DeploymentConfig.Spec.Strategy.rollingParams.timeoutSeconds"
-	// UpdatePeriodSeconds is the time to wait between individual pod updates. If
-	// the value is nil, a default will be used.
-	// Unable to Add since its exceeding the number of characters max_length allowed is 63
-	dcUpdatePeriodSeconds = "DeploymentConfig.Spec.Strategy.rollingParams.updatePeriodSeconds"
 )
 
 func unsupportedField(pluginName string, log logrus.FieldLogger, msgString string) {
@@ -49,12 +39,8 @@ func annotateUnsupported(pluginName string, src deployAPI.Deployment) map[string
 	}
 
 	annotations[pluginName+"/"+dcTest] = "unsupported"
-	annotations[pluginName+"/"+dcTrigger] = "unsupported"
+	annotations[pluginName+"/"+dcTriggers] = "unsupported"
 	annotations[pluginName+"/"+dcActiveDeadlineSeconds] = "unsupported"
-	annotations[pluginName+"/"+dcIntervalSeconds] = "unsupported"
-	annotations[pluginName+"/"+dcTimeoutSeconds] = "unsupported"
-	//Unable to Add since its exceeding the number of characters max_length allowed is 63
-	//annotations[pluginName+"/"+dcUpdatePeriodSeconds] = "unsupported"
 
 	return annotations
 }
@@ -114,35 +100,21 @@ func Mutate(pluginName string, log logrus.FieldLogger, dc dcAPI.DeploymentConfig
 	}
 	// End of Spec Section
 
-	//Status Section Start
-	deploy.Status.AvailableReplicas = dc.Status.AvailableReplicas
-	deploy.Status.ObservedGeneration = dc.Status.ObservedGeneration
-	deploy.Status.Replicas = dc.Status.Replicas
-	deploy.Status.UnavailableReplicas = dc.Status.UnavailableReplicas
-	deploy.Status.UpdatedReplicas = dc.Status.UpdatedReplicas
-
-	if dc.Status.Conditions != nil {
-		deploy.Status.Conditions = make([](deployAPI.DeploymentCondition), len(dc.Status.Conditions))
-
-		for i := range dc.Status.Conditions {
-
-			deploy.Status.Conditions[i].Type = deployAPI.DeploymentConditionType(dc.Status.Conditions[i].Type)
-			deploy.Status.Conditions[i].Status = dc.Status.Conditions[i].Status
-			deploy.Status.Conditions[i].LastUpdateTime = dc.Status.Conditions[i].LastUpdateTime
-			deploy.Status.Conditions[i].LastTransitionTime = dc.Status.Conditions[i].LastTransitionTime
-			deploy.Status.Conditions[i].Reason = dc.Status.Conditions[i].Reason
-			deploy.Status.Conditions[i].Message = dc.Status.Conditions[i].Message
-		}
+	//Logging the unsupported fields start
+	// dc.Triggers
+	if dc.Spec.Triggers != nil {
+		unsupportedField(pluginName, log, dcTriggers)
 	}
-	// End of Status Section
+	//dc.Test
+	if dc.Spec.Test == true {
+		unsupportedField(pluginName, log, dcTest)
+	}
+	//dc.Spec.Strategy.ActiveDeadlineSeconds
+	if dc.Spec.Strategy.ActiveDeadlineSeconds != nil {
+		unsupportedField(pluginName, log, dcActiveDeadlineSeconds)
+	}
+	//End of unsupported fileds
 
-	//Logging the unsupported fields
-	unsupportedField(pluginName, log, dcTest)
-	unsupportedField(pluginName, log, dcTrigger)
-	unsupportedField(pluginName, log, dcActiveDeadlineSeconds)
-	unsupportedField(pluginName, log, dcIntervalSeconds)
-	unsupportedField(pluginName, log, dcTimeoutSeconds)
-	unsupportedField(pluginName, log, dcUpdatePeriodSeconds)
 	//Return
 	return deploy, nil
 
