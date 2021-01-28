@@ -78,6 +78,7 @@ func Mutate(pluginName string, log logrus.FieldLogger, dc dcAPI.DeploymentConfig
 	// openshift supoorts Strategy.Type={"Recreate","Custom","Rolling"}
 	// K8s native supports k8s.Strategy.Type={"Recreate","RollingUpdate"}
 	// Custom strategy.type is not supported in K8s native, hence defaulting it to RollingUpdate
+	// In case the Strategy.type from Openshift is Recreate then a default value gets assigned.
 	if dc.Spec.Strategy.Type != "" {
 		if dc.Spec.Strategy.Type == "Rolling" || dc.Spec.Strategy.Type == "Custom" {
 			deploy.Spec.Strategy.Type = deployAPI.DeploymentStrategyType("RollingUpdate")
