@@ -7,26 +7,30 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// declare a list of dc fields that are not supported in deployment.apps
-var (
-	dcTriggers = "DeploymentConfig.Spec.Triggers"
-	dcTest     = "DeploymentConfig.Spec.Test"
+const (
+	// Test ensures that this deployment config will have zero replicas except
+	// while a deployment is running. This allows the deployment config to be used
+	// as a continuous deployment test - triggering on images, running the
+	// deployment, and then succeeding or failing. Post strategy hooks and After
+	// actions can be used to integrate successful deployment with an action.
+	dcTest = "DeploymentConfig.Spec.test"
+	// Triggers determine how updates to a DeploymentConfig result in new
+	// deployments. If no triggers are defined, a new deployment can only occur as
+	// a result of an explicit client update to the DeploymentConfig with a new
+	// LatestVersion. If null, defaults to having a config change trigger.
+	dcTriggers = "DeploymentConfig.Spec.triggers"
+	// activeDeadlineSeconds is the duration in seconds that the deployer pods for
+	// this deployment config may be active on a node before the system actively
+	// tries to terminate them
+	dcActiveDeadlineSeconds = "DeploymentConfig.Spec.Strategy.activeDeadlineSeconds"
 )
 
-// if there's an error, print it out
-func checkError(pluginName string, log *logrus.Logger, msgString string, err error) {
-	if err != nil {
-		log.Errorf("[%s] %s %v", pluginName, msgString, err.Error())
-	}
-}
-
-func unsupportedField(pluginName string, log *logrus.Logger, msgString string) {
+func unsupportedField(pluginName string, log logrus.FieldLogger, msgString string) {
 	// maybe only print out if log level is debug or ...
 	log.Warnf("[%s] %s %s", pluginName, msgString, "unsupported")
 }
 
-// append the list of unsupported fields
-func annotateUnsupported(pluginName string, src dcAPI.DeploymentConfig) map[string]string {
+func annotateUnsupported(pluginName string, src deployAPI.Deployment) map[string]string {
 
 	annotations := src.GetAnnotations()
 
@@ -34,59 +38,32 @@ func annotateUnsupported(pluginName string, src dcAPI.DeploymentConfig) map[stri
 		annotations = make(map[string]string)
 	}
 
-	annotations[pluginName+"/"+dcTriggers] = "unsupported"
 	annotations[pluginName+"/"+dcTest] = "unsupported"
+	annotations[pluginName+"/"+dcTriggers] = "unsupported"
+	annotations[pluginName+"/"+dcActiveDeadlineSeconds] = "unsupported"
 
 	return annotations
 }
 
 // Mutate converts a deploymentconfig to deployment
-func Mutate(pluginName string, dc dcAPI.DeploymentConfig, log *logrus.Logger) (deployAPI.Deployment, error) {
-
-	log.Tracef("[%s] dc %#v", pluginName, dc)
+func Mutate(pluginName string, log logrus.FieldLogger, dc dcAPI.DeploymentConfig) (deployAPI.Deployment, error) {
 
 	deploy := deployAPI.Deployment{}
 
-	// follow this guide for converting OpenShift DeploymentConfig to Kubernetes Deployment
-	// https://gist.github.com/bmaupin/d5be3ca882345ff92e8336698230dae0
-
-	// populate deploy with properties from dc object
-	// metadata first
+	//MetaData Section Start
 	deploy.Kind = "Deployment"
 	deploy.APIVersion = "apps/v1"
 	deploy.Name = dc.Name
 	deploy.Namespace = dc.Namespace
-	deploy.Annotations = annotateUnsupported(pluginName, dc)
 	deploy.Labels = dc.Labels
+	deploy.Annotations = annotateUnsupported(pluginName, deploy)
+	//End of MetaData Section
 
-	log.Debugf("[%s] Strategy: %#v", pluginName, dc.Spec.Strategy)
-	// openshift Strategy.Type={"Recreate","Custom","Rolling"}
-	// k8s.Strategy.Type={"Recreate","RollingUpdate"} - no custom, default to RollingUpdate
-	if dc.Spec.Strategy.Type != "" {
-		deploy.Spec.Strategy.Type = deployAPI.DeploymentStrategyType(dc.Spec.Strategy.Type)
-		if dc.Spec.Strategy.Type != "Recreate" {
-			deploy.Spec.Strategy.Type = deployAPI.DeploymentStrategyType("RollingUpdate")
-		}
-	}
-
-	deploy.Spec.MinReadySeconds = dc.Spec.MinReadySeconds
-
-	// dc.Triggers
-	if dc.Spec.Triggers != nil {
-		unsupportedField(pluginName, log, dcTriggers)
-	}
-
+	//Spec section start
 	deploy.Spec.Replicas = &dc.Spec.Replicas
-
 	deploy.Spec.RevisionHistoryLimit = dc.Spec.RevisionHistoryLimit
-
-	if dc.Spec.Test == true {
-		unsupportedField(pluginName, log, dcTest)
-	}
-
 	deploy.Spec.Paused = dc.Spec.Paused
-
-	log.Debugf("[%s] dc.Selector: %#v", pluginName, dc.Spec.Selector)
+	deploy.Spec.MinReadySeconds = dc.Spec.MinReadySeconds
 	if dc.Spec.Selector != nil {
 		deploy.Spec.Selector = new(v1.LabelSelector)
 
@@ -96,13 +73,50 @@ func Mutate(pluginName string, dc dcAPI.DeploymentConfig, log *logrus.Logger) (d
 			deploy.Spec.Selector.MatchLabels[index] = element
 		}
 	}
-	log.Debugf("[%s] d.Selector: %#v", pluginName, deploy.Spec.Selector)
+	log.Debugf("[%s] Strategy: %#v", pluginName, dc.Spec.Strategy)
+
+	// openshift supoorts Strategy.Type={"Recreate","Custom","Rolling"}
+	// K8s native supports k8s.Strategy.Type={"Recreate","RollingUpdate"}
+	// Custom strategy.type is not supported in K8s native, hence defaulting it to RollingUpdate
+	// In case the Strategy.type from Openshift is Recreate then a default value gets assigned.
+	if dc.Spec.Strategy.Type != "" {
+		if dc.Spec.Strategy.Type == "Rolling" || dc.Spec.Strategy.Type == "Custom" {
+			deploy.Spec.Strategy.Type = deployAPI.DeploymentStrategyType("RollingUpdate")
+		} else {
+			deploy.Spec.Strategy.Type = deployAPI.DeploymentStrategyType(dc.Spec.Strategy.Type)
+		}
+
+	}
+	//Rollingupdate.MaxSurge and Rollingupdate.MaxUnavailable supported only when Strategy type is "RollingUpdate"
+	//If openshift Strategy.type is Custom Rollingupdate.MaxSurge and Rollingupdate.MaxUnavailable is not applicable.
+	if deploy.Spec.Strategy.Type == "RollingUpdate" && dc.Spec.Strategy.Type != "Custom" {
+		deploy.Spec.Strategy.RollingUpdate = new(deployAPI.RollingUpdateDeployment)
+		deploy.Spec.Strategy.RollingUpdate.MaxSurge = dc.Spec.Strategy.RollingParams.MaxSurge
+		deploy.Spec.Strategy.RollingUpdate.MaxUnavailable = dc.Spec.Strategy.RollingParams.MaxUnavailable
+	}
+	deploy.Spec.RevisionHistoryLimit = dc.Spec.RevisionHistoryLimit
 
 	if dc.Spec.Template != nil {
 		dc.Spec.Template.DeepCopyInto(&deploy.Spec.Template)
 	}
+	// End of Spec Section
 
-	log.Tracef("[%s] deployment %#v", pluginName, deploy)
+	//Logging the unsupported fields start
+	// dc.Triggers
+	if dc.Spec.Triggers != nil {
+		unsupportedField(pluginName, log, dcTriggers)
+	}
+	//dc.Test
+	if dc.Spec.Test == true {
+		unsupportedField(pluginName, log, dcTest)
+	}
+	//dc.Spec.Strategy.ActiveDeadlineSeconds
+	if dc.Spec.Strategy.ActiveDeadlineSeconds != nil {
+		unsupportedField(pluginName, log, dcActiveDeadlineSeconds)
+	}
+	//End of unsupported fileds
 
+	//Return
 	return deploy, nil
+
 }
