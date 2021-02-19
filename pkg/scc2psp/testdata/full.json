@@ -1,0 +1,89 @@
+{
+    "allowHostDirVolumePlugin": true,
+    "allowHostIPC": false,
+    "allowHostNetwork": false,
+    "allowHostPID": false,
+    "allowHostPorts": true,
+    "allowPrivilegeEscalation": true,
+    "allowPrivilegedContainer": false,
+    "allowedCapabilities": [
+      "KILL"
+    ],
+    "apiVersion": "v1",
+    "defaultAddCapabilities": [
+      "SETUID"
+    ],
+    "fsGroup": {
+      "type": "RunAsAny",
+      "ranges": [
+        {
+          "min": 5000,
+          "max": 6000
+        }
+      ]
+    },
+    "groups": [
+      "system:cluster-admins",
+      "system:authenticated"
+    ],
+    "kind": "SecurityContextConstraints",
+    "metadata": {
+      "annotations": {
+        "kubernetes.io/description": "full SCC test data"
+      },
+      "labels" : {
+        "testkey": "testval"
+      },
+      "creationTimestamp": "2019-11-27T13:15:37Z",
+      "name": "fulltest",
+      "resourceVersion": "106569",
+      "selfLink": "/api/v1/securitycontextconstraints/fulltest",
+      "uid": "009fedaa-1118-11ea-9c6d-005056996858"
+    },
+    "priority": 10,
+    "readOnlyRootFilesystem": false,
+    "requiredDropCapabilities": [
+      "MKNOD"
+    ],
+    "runAsUser": {
+      "type": "RunAsAny",
+      "uidRangeMin": 1000,
+      "uidRangeMax": 2000,
+      "uid": 1500
+    },
+    "seLinuxContext": {
+      "type": "MustRunAs",
+      "seLinuxOptions": {
+        "user": "selUser",
+        "role": "selRole",
+        "type": "selType",
+        "level": "selLevel"
+      }
+    },
+    "supplementalGroups": {
+      "type": "RunAsAny",
+      "ranges": [
+        {
+          "min": 3000,
+          "max": 4000
+        }
+      ]
+    },
+    "users": [],
+    "volumes": [
+      "configMap",
+      "downwardAPI",
+      "emptyDir",
+      "persistentVolumeClaim",
+      "projected",
+      "secret"
+    ],
+    "allowedFlexVolumes": [
+      {
+        "driver": "testDriver"
+      }
+    ],
+    "seccompProfiles": [
+      "*"
+    ]
+}
