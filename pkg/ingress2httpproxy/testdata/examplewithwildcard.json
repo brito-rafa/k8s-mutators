@@ -4,8 +4,8 @@
     "metadata": {
       "name": "cafe-ingress",
       "annotations": {
-      "ingress.kubernetes.io/proxy-body-size": "50m",
-      "ingress2httpproxy/fqdnnewdomain": "sample.vmware.com"
+      "ingress.kubernetes.io/proxy-body-size": "50m"
+      
       
     }
     },
@@ -13,7 +13,7 @@
       "tls": [
         {
           "hosts": [
-            "cafe.example.com"
+            "cafe.example.biz"
           ],
           "secretName": "cafe-secret"
          
@@ -21,7 +21,7 @@
       ],
       "rules": [
         {
-          "host": "cafe.vmware.com",
+          "host": "cafe.migrator.servicemesh.biz",
           "http": {
             "paths": [
               {
@@ -42,7 +42,7 @@
           }
         },
         {
-          "host": "cafe2.vmware.com",
+          "host": "cafe2.migrator.servicemesh.biz",
           "http": {
             "paths": [
               {
@@ -62,7 +62,7 @@
             ]
           }
         },{
-          "host": "cafe3.vmware.com",
+          "host": "cafe3.migrator.servicemesh.biz",
           "http": {
             "paths": [
               {
