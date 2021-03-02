@@ -13,7 +13,7 @@
       "tls": [
         {
           "hosts": [
-            "cafe.example.biz"
+            "cafe.migrator.servicemesh.biz"
           ],
           "secretName": "cafe-secret"
          
