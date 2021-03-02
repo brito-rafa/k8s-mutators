@@ -83,8 +83,10 @@ func (m *Mutator) buildHTTPProxy() contour.HTTPProxy {
 		Fqdn: httpProxyFqdn,
 	}
 
-	hp.Spec.VirtualHost.TLS = &contour.TLS{}
-	hp.Spec.VirtualHost.TLS.SecretName = m.input.Spec.TLS[0].SecretName
+	if m.input.Spec.TLS[0].SecretName != "" {
+		hp.Spec.VirtualHost.TLS = &contour.TLS{}
+		hp.Spec.VirtualHost.TLS.SecretName = m.input.Spec.TLS[0].SecretName
+	}
 
 	return hp
 }
