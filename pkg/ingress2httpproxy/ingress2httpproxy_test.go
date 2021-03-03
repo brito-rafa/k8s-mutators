@@ -27,7 +27,7 @@ func TestBuildHTTPProxy(t *testing.T) {
 	}{
 		{
 			"Test config map with *.domain",
-			"examplewithwildcard.json",
+			"example_with_wildcard.json",
 			output{
 				httpProxy:  "HTTPProxy",
 				apiVersion: "projectcontour.io/v1",
@@ -36,7 +36,7 @@ func TestBuildHTTPProxy(t *testing.T) {
 		},
 		{
 			"Test config map with .domain",
-			"examplewithwildcard.json",
+			"example_with_wildcard.json",
 			output{
 				httpProxy:  "HTTPProxy",
 				apiVersion: "projectcontour.io/v1",
@@ -45,7 +45,7 @@ func TestBuildHTTPProxy(t *testing.T) {
 		},
 		{
 			"Test config map with .domain",
-			"examplewithoutwildcard.json",
+			"example_without_wildcard.json",
 			output{
 				httpProxy:  "HTTPProxy",
 				apiVersion: "projectcontour.io/v1",
@@ -55,7 +55,7 @@ func TestBuildHTTPProxy(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		m := newMutatorFromFileData(t, tc.input, tc.domain)
+		m := newMutatorFromFileData(t, tc.input, tc.domain, tc.name)
 		hp := m.buildHTTPProxy()
 
 		assert.Equal(t, tc.want.httpProxy, hp.Kind)
@@ -68,23 +68,20 @@ func TestBuildHTTPProxy(t *testing.T) {
 		assert.Equal(t, m.input.Spec.Rules[0].HTTP.Paths[1].Backend.ServiceName, hp.Spec.Routes[1].Services[0].Name)
 		assert.Equal(t, m.input.Spec.Rules[0].HTTP.Paths[1].Backend.ServicePort.IntValue(), hp.Spec.Routes[1].Services[0].Port)
 		assert.Equal(t, m.input.Spec.Rules[0].Host, hp.Spec.VirtualHost.Fqdn)
-
 	}
 }
 
-func newMutatorFromFileData(t *testing.T, fileName string, domain string) Mutator {
+func newMutatorFromFileData(t *testing.T, fileName, domain, testName string) Mutator {
 	ingressFilePath := filepath.Join("testdata", fileName)
 	ingressFile, err := ioutil.ReadFile(ingressFilePath)
-
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("%s: %v", testName, err)
 	}
 
 	ingress := networking.Ingress{}
 	err = json.Unmarshal(ingressFile, &ingress)
-
 	if err != nil {
-		t.Errorf("Failed to unmarshall Ingress JSON = %v", err)
+		t.Errorf("%s: unmarshall Ingress JSON = %v", testName, err)
 	}
 
 	return NewMutator(clientName, logrus.New(), ingress, domain)

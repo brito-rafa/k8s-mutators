@@ -63,11 +63,10 @@ func (m *Mutator) buildHTTPProxy() contour.HTTPProxy {
 			Routes: hpTranslatedRoute,
 		},
 	}
-	log.Warnf("[%s] No new wildcard DNS domain specified. This mutation will use original domain from Ingress Host %s.", m.name, m.input.Spec.Rules[0].Host)
+
 	httpProxyFqdn := m.input.Spec.Rules[0].Host
 	if m.domain != "" {
 		normalizedDomain := m.domain
-		// let's accept the domain starting with "*." or "."
 		if m.domain[0:2] == "*." {
 			normalizedDomain = m.domain[2:]
 		}
@@ -76,7 +75,12 @@ func (m *Mutator) buildHTTPProxy() contour.HTTPProxy {
 		}
 		prefix := strings.SplitN(m.input.Spec.Rules[0].Host, ".", 2)
 		httpProxyFqdn = prefix[0] + "." + normalizedDomain
-
+	} else {
+		log.Warnf(
+			"[%s] No new wildcard DNS domain specified, use original Ingress host domain %s.",
+			m.name,
+			m.input.Spec.Rules[0].Host,
+		)
 	}
 
 	hp.Spec.VirtualHost = &contour.VirtualHost{
@@ -87,7 +91,6 @@ func (m *Mutator) buildHTTPProxy() contour.HTTPProxy {
 		hp.Spec.VirtualHost.TLS = &contour.TLS{}
 		hp.Spec.VirtualHost.TLS.SecretName = m.input.Spec.TLS[0].SecretName
 	}
-
 	return hp
 }
 
