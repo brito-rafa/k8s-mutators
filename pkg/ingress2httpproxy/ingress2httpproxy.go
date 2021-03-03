@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	contour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 	networking "k8s.io/api/networking/v1beta1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +75,7 @@ func (m *Mutator) buildHTTPProxy() contour.HTTPProxy {
 		prefix := strings.SplitN(m.input.Spec.Rules[0].Host, ".", 2)
 		httpProxyFqdn = prefix[0] + "." + normalizedDomain
 	} else {
-		log.Warnf(
+		m.log.Warnf(
 			"[%s] No new wildcard DNS domain specified, use original Ingress host domain %s.",
 			m.name,
 			m.input.Spec.Rules[0].Host,
@@ -116,7 +115,7 @@ func (m *Mutator) createRoute(httpAnnotations map[string]string) ([]contour.Rout
 		for _, inrule := range inrules[1:] {
 			hosts = append(hosts, inrule.Host)
 		}
-		log.Infof("[%s] unsupported hosts: %s", m.name, strings.Join(hosts, ", "))
+		m.log.Infof("[%s] unsupported hosts: %s", m.name, strings.Join(hosts, ", "))
 		httpAnnotations[m.name+"/"+unsupportedHosts] = strings.Join(hosts, ", ")
 	}
 
