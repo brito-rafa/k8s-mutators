@@ -1,0 +1,194 @@
+{
+  "apiVersion": "apps.openshift.io/v1",
+  "kind": "DeploymentConfig",
+  "metadata": {
+    "creationTimestamp": "2019-11-27T13:37:51Z",
+    "generation": 1,
+    "labels": {
+      "docker-registry": "default"
+    },
+    "name": "docker-registry",
+    "namespace": "default",
+    "resourceVersion": "101890",
+    "selfLink": "/apis/apps.openshift.io/v1/namespaces/default/deploymentconfigs/docker-registry",
+    "uid": "1bdb6f0c-111b-11ea-85f7-005056994e32"
+  },
+  "spec": {
+    "replicas": 1,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "docker-registry": "default"
+    },
+    "strategy": {
+      "activeDeadlineSeconds": 21600,
+      "resources": {},
+      "type": "Recreate"
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "docker-registry": "default"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "REGISTRY_HTTP_ADDR",
+                "value": ":5000"
+              },
+              {
+                "name": "REGISTRY_HTTP_NET",
+                "value": "tcp"
+              },
+              {
+                "name": "REGISTRY_HTTP_SECRET",
+                "value": "PcOwGZf82ZzytIWG0iMHL8mkesjb2z/689PYqmGTm/0="
+              },
+              {
+                "name": "REGISTRY_MIDDLEWARE_REPOSITORY_OPENSHIFT_ENFORCEQUOTA",
+                "value": "false"
+              },
+              {
+                "name": "OPENSHIFT_DEFAULT_REGISTRY",
+                "value": "docker-registry.default.svc:5000"
+              },
+              {
+                "name": "REGISTRY_HTTP_TLS_CERTIFICATE",
+                "value": "/etc/secrets/registry.crt"
+              },
+              {
+                "name": "REGISTRY_OPENSHIFT_SERVER_ADDR",
+                "value": "docker-registry.default.svc:5000"
+              },
+              {
+                "name": "REGISTRY_HTTP_TLS_KEY",
+                "value": "/etc/secrets/registry.key"
+              }
+            ],
+            "image": "registry.access.redhat.com/openshift3/ose-docker-registry:v3.11",
+            "imagePullPolicy": "IfNotPresent",
+            "livenessProbe": {
+              "failureThreshold": 3,
+              "httpGet": {
+                "path": "/healthz",
+                "port": 5000,
+                "scheme": "HTTPS"
+              },
+              "initialDelaySeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "name": "registry",
+            "ports": [
+              {
+                "containerPort": 5000,
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 3,
+              "httpGet": {
+                "path": "/healthz",
+                "port": 5000,
+                "scheme": "HTTPS"
+              },
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "256Mi"
+              }
+            },
+            "securityContext": {
+              "privileged": false
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/registry",
+                "name": "registry-storage"
+              },
+              {
+                "mountPath": "/etc/secrets",
+                "name": "registry-certificates"
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "nodeSelector": {
+          "node-role.kubernetes.io/infra": "true"
+        },
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "registry",
+        "serviceAccountName": "registry",
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+          {
+            "name": "registry-storage",
+            "persistentVolumeClaim": {
+              "claimName": "registry-claim"
+            }
+          },
+          {
+            "name": "registry-certificates",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "registry-certificates"
+            }
+          }
+        ]
+      }
+    },
+    "test": false,
+    "triggers": [
+      {
+        "type": "ConfigChange"
+      }
+    ]
+  },
+  "status": {
+    "availableReplicas": 1,
+    "conditions": [
+      {
+        "lastTransitionTime": "2019-11-27T13:38:12Z",
+        "lastUpdateTime": "2019-11-27T13:38:12Z",
+        "message": "replication controller \"docker-registry-1\" successfully rolled out",
+        "reason": "NewReplicationControllerAvailable",
+        "status": "True",
+        "type": "Progressing"
+      },
+      {
+        "lastTransitionTime": "2019-11-27T22:19:55Z",
+        "lastUpdateTime": "2019-11-27T22:19:55Z",
+        "message": "Deployment config has minimum availability.",
+        "status": "True",
+        "type": "Available"
+      }
+    ],
+    "details": {
+      "causes": [
+        {
+          "type": "ConfigChange"
+        }
+      ],
+      "message": "config change"
+    },
+    "latestVersion": 1,
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1,
+    "unavailableReplicas": 0,
+    "updatedReplicas": 1
+  }
+}
