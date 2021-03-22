@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dcAPI "github.com/openshift/api/apps/v1"
+	apps "github.com/openshift/api/apps/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -77,14 +77,14 @@ func TestDeployment(t *testing.T) {
 	}
 }
 
-func newMutatorFromFileData(t *testing.T, fileName, testName string) dcAPI.DeploymentConfig {
+func newMutatorFromFileData(t *testing.T, fileName, testName string) apps.DeploymentConfig {
 	dcConfigFilePath := filepath.Join("testdata", fileName)
 	dc2File, err := ioutil.ReadFile(dcConfigFilePath)
 	if err != nil {
 		t.Fatalf("%s: %v", testName, err)
 	}
 
-	dc := dcAPI.DeploymentConfig{}
+	dc := apps.DeploymentConfig{}
 	err = json.Unmarshal(dc2File, &dc)
 	if err != nil {
 		t.Errorf("%s: unmarshall Ingress JSON = %v", testName, err)
