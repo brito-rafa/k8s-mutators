@@ -87,7 +87,7 @@ func newMutatorFromFileData(t *testing.T, fileName, testName string) apps.Deploy
 	dc := apps.DeploymentConfig{}
 	err = json.Unmarshal(dc2File, &dc)
 	if err != nil {
-		t.Errorf("%s: unmarshall Ingress JSON = %v", testName, err)
+		t.Errorf("%s: unmarshall DeploymentConfig  JSON = %v", testName, err)
 	}
 
 	return dc
