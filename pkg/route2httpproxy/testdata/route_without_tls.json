@@ -1,0 +1,46 @@
+{
+    "apiVersion": "route.openshift.io/v1",
+    "kind": "Route",
+    "metadata": {
+        "annotations": {
+            "openshift.io/host.generated": "true"
+        },
+        "creationTimestamp": "2019-11-27T22:50:33Z",
+        "labels": {
+            "app": "nginx"
+        },
+        "name": "nginx",
+        "namespace": "default",
+        "resourceVersion": "108019",
+        "selfLink": "/apis/route.openshift.io/v1/namespaces/nginx-example/routes/nginx",
+        "uid": "51c7067a-1168-11ea-adc7-005056996858"
+    },
+    "spec": {
+        "host": "nginx-example.apps.ocp3.gsslab.local",
+        "port": {
+            "targetPort": 80
+        },
+        "to": {
+            "kind": "Service",
+            "name": "nginx",
+            "weight": 100
+        },
+        "wildcardPolicy": "None"
+    },
+    "status": {
+        "ingress": [
+            {
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2019-11-27T22:50:32Z",
+                        "status": "True",
+                        "type": "Admitted"
+                    }
+                ],
+                "host": "nginx-example.apps.ocp3.gsslab.local",
+                "routerName": "router",
+                "wildcardPolicy": "None"
+            }
+        ]
+    }
+}
