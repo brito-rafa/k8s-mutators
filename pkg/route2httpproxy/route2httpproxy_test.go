@@ -15,9 +15,11 @@ import (
 
 func TestDeployment(t *testing.T) {
 	type output struct {
-		kind       string
-		apiVersion string
-		fqdn       string
+		kind             string
+		apiVersion       string
+		fqdn             string
+		secretKind       string
+		secretApiVersion string
 	}
 
 	tests := []struct {
@@ -28,24 +30,26 @@ func TestDeployment(t *testing.T) {
 		domain       string
 	}{
 		{
-			"Test config map with Rolling Strategy",
+			"Test route with tls",
 			"route_with_tls.json",
 			"service-input.json",
 			output{
-				kind:       "HTTPProxy",
-				apiVersion: "projectcontour.io/v1",
-				fqdn:       "my-nginx-nginx-example.migrator.servicemesh.biz",
+				kind:             "HTTPProxy",
+				apiVersion:       "projectcontour.io/v1",
+				fqdn:             "nginx-example.migrator.servicemesh.biz",
+				secretKind:       "Secret",
+				secretApiVersion: "v1",
 			},
 			"*.migrator.servicemesh.biz",
 		},
 		{
-			"Test config map with Rolling Strategy",
+			"Test route without tls",
 			"route_without_tls.json",
 			"service-input.json",
 			output{
 				kind:       "HTTPProxy",
 				apiVersion: "projectcontour.io/v1",
-				fqdn:       "my-nginx-nginx-example.migrator.servicemesh.biz",
+				fqdn:       "nginx-example.migrator.servicemesh.biz",
 			},
 			"*.migrator.servicemesh.biz",
 		},
@@ -53,7 +57,7 @@ func TestDeployment(t *testing.T) {
 
 	for _, tc := range tests {
 		routeInput, serviceInput := newMutatorFromFileData(t, tc.routeInput, tc.serviceInput, tc.name)
-		hp, service, _ := Mutate(tc.name, logrus.New(), routeInput, serviceInput, tc.domain)
+		hp, secret, _ := Mutate(tc.name, logrus.New(), routeInput, serviceInput, tc.domain)
 
 		assert.Equal(t, tc.want.apiVersion, tc.want.apiVersion)
 		assert.Equal(t, routeInput.Name, hp.Name)
@@ -69,16 +73,24 @@ func TestDeployment(t *testing.T) {
 
 		if routeInput.Spec.TLS != nil {
 			if routeInput.Spec.TLS.Termination == "passthrough" {
-				assert.True(t, true, hp.Spec.VirtualHost.TLS.Passthrough)
-			} else if routeInput.Spec.TLS.Termination == "edge" || routeInput.Spec.TLS.Termination == "reencrypt" {
+				assert.True(t, hp.Spec.VirtualHost.TLS.Passthrough)
+			}
+			if routeInput.Spec.TLS.Termination == "edge" || routeInput.Spec.TLS.Termination == "reencrypt" {
 				if routeInput.Spec.TLS.Certificate != "" && routeInput.Spec.TLS.Key != "" {
-					assert.NotEmpty(t, hp.Spec.VirtualHost.TLS.SecretName)
-					assert.Equal(t, base64.StdEncoding.EncodeToString([]byte(routeInput.Spec.TLS.Key)), string(service.Data["tls.key"]))
-					assert.Equal(t, base64.StdEncoding.EncodeToString([]byte(routeInput.Spec.TLS.Certificate)), string(service.Data["tls.crt"]))
-					assert.Len(t, service.Data, 2)
+					assert.Equal(t, hp.Spec.VirtualHost.TLS.SecretName, secret.Name)
+					assert.Equal(t, tc.want.secretKind, secret.Kind)
+					assert.Equal(t, tc.want.secretApiVersion, secret.APIVersion)
+					assert.Equal(t, routeInput.ObjectMeta.Namespace, secret.Namespace)
+					assert.Equal(t,
+						base64.StdEncoding.EncodeToString([]byte(routeInput.Spec.TLS.Key)),
+						string(secret.Data["tls.key"]))
+					assert.Equal(t,
+						base64.StdEncoding.EncodeToString([]byte(routeInput.Spec.TLS.Certificate)),
+						string(secret.Data["tls.crt"]))
 				}
 			}
 		}
+
 	}
 }
 

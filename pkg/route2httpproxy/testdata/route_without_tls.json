@@ -9,20 +9,20 @@
         "labels": {
             "app": "nginx"
         },
-        "name": "my-nginx",
+        "name": "nginx",
         "namespace": "default",
         "resourceVersion": "108019",
-        "selfLink": "/apis/route.openshift.io/v1/namespaces/nginx-example/routes/my-nginx",
+        "selfLink": "/apis/route.openshift.io/v1/namespaces/nginx-example/routes/nginx",
         "uid": "51c7067a-1168-11ea-adc7-005056996858"
     },
     "spec": {
-        "host": "my-nginx-nginx-example.apps.ocp3.gsslab.local",
+        "host": "nginx-example.apps.ocp3.gsslab.local",
         "port": {
             "targetPort": 80
         },
         "to": {
             "kind": "Service",
-            "name": "my-nginx",
+            "name": "nginx",
             "weight": 100
         },
         "wildcardPolicy": "None"
@@ -37,7 +37,7 @@
                         "type": "Admitted"
                     }
                 ],
-                "host": "my-nginx-nginx-example.apps.ocp3.gsslab.local",
+                "host": "nginx-example.apps.ocp3.gsslab.local",
                 "routerName": "router",
                 "wildcardPolicy": "None"
             }
